@@ -1,13 +1,17 @@
 module DBNL
   module Formatting
     class Emphasis < DBNL::Structure::TextNode
-      attr_reader :text
+      attr_reader :nodes
       def initialize(text)
-        @text = text
+        @nodes = text
+      end
+
+      def text
+        to_s
       end
 
       def to_s
-        @text.to_s
+        @nodes.map { |n| n.to_s }.join
       end
     end
 
@@ -19,8 +23,16 @@ module DBNL
 
     class SmallCaps < Emphasis
       def to_s
-        @text.upcase
+        super.upcase
       end
+    end
+
+    class NewLine
+      def initialize(garbage)
+      end
+    end
+
+    class Small < Emphasis
     end
   end
 end

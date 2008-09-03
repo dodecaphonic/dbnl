@@ -1,6 +1,0 @@
-require 'rip_dbnl'
-require 'pdf_formatter'
-
-book = Marshal.load open("wolf.bin").read
-paras = book.chapters.first.paragraphs
-pdf  = DBNL::Formatters::PDFFormatter.new book

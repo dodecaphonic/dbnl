@@ -1,19 +1,33 @@
 module DBNL
   module Structure
-    class TextNode
+    class DocumentNode
+    end
+
+    class TextNode < DocumentNode
       attr_reader :text
       def initialize(text)
         @text = text
       end
 
       def to_s
-        @text.to_s
+        @text
+      end
+    end
+
+    class Container < DocumentNode
+      attr_reader :nodes
+      def initialize(nodes)
+        @nodes = nodes
+      end
+
+      def to_s
+        @nodes.map { |n| n.to_s }.join
       end
     end
 
     class ParagraphList < Array
       alias :org_push :push
-      PUNCTUATION_END = /(\.|,|:|!|\?|(\.|\?|!)\342\200\231)(\s+)?$/
+      PUNCTUATION_END = /(\.|!|\?|(\.|\?|!)\342\200\231)(\s+)?$/
       def push(paragraph)
         latest = last
         unless latest.nil? or latest.to_s =~ PUNCTUATION_END
@@ -34,7 +48,7 @@ module DBNL
       end
     end
 
-    class Paragraph
+    class Paragraph < DocumentNode
       attr_accessor :receded, :nodes
       def initialize(nodes)
         @nodes = nodes
@@ -50,14 +64,14 @@ module DBNL
       end
     end
 
-    class Image
+    class ImageNode < DocumentNode
       attr_reader :filename, :caption
       def initialize(filename, caption)
         @filename, @caption = filename, caption
       end
     end
 
-    class Page
+    class Page < DocumentNode
       attr_reader :number, :paragraphs
       def initialize(number)
         @number = number
@@ -69,7 +83,7 @@ module DBNL
       end
     end
 
-    class Heading
+    class Heading < DocumentNode
       def initialize(nodes)
         @nodes = nodes
       end
@@ -82,7 +96,7 @@ module DBNL
     class MainHeading < Heading; end
     class SecondaryHeading < Heading; end
 
-    class Chapter
+    class Chapter < DocumentNode
       attr_reader :title
       attr_accessor :pages, :headings
       def initialize(title)
@@ -92,10 +106,11 @@ module DBNL
       end
 
       def paragraphs
-        #@pages.inject([]) { |p, n| p + n.paragraphs }
+        org_paras = @pages.inject([]) { |p, n| p + n.paragraphs }
         paras = ParagraphList.new
-        @pages.each do |page|
-          page.paragraphs.each { |para| paras << para }
+        org_paras.each do |para|
+          new_para = Paragraph.new para.nodes.dup
+          paras << new_para
         end
         paras
       end
