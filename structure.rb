@@ -121,8 +121,9 @@ module DBNL
     end
 
     class Book
-      attr_reader :chapters, :title, :author
-      def initialize(title, author)
+      attr_reader :url, :chapters, :title, :author
+      def initialize(book_url, title, author)
+        @url = book_url
         @title = title
         @author = author
         @chapters = []

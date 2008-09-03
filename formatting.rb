@@ -30,6 +30,10 @@ module DBNL
     class NewLine
       def initialize(garbage)
       end
+
+      def to_s
+        ""
+      end
     end
 
     class Small < Emphasis

@@ -13,7 +13,7 @@ module DBNL
     attr_reader :book
     def create_book(book_url)
       scraper = Hpricot open(book_url)
-      @book  = Structure::Book.new *extract_details(scraper)
+      @book  = Structure::Book.new book_url, *extract_details(scraper)
       index = extract_chapter_list scraper
       done = []
       index.each do |name, url|
@@ -80,24 +80,28 @@ module DBNL
 
     def parse_paragraph(para)
       nodes = []
+      processed = []
       para.children.each_with_index do |portion, i|
-        next if !portion.is_a?(Hpricot::Text) && portion.stag.name == 'a' or portion.nil?
+        next if !portion.is_a?(Hpricot::Text) && portion.stag.name == 'a' or portion.nil? or processed.member?(portion)
         if portion.is_a?(Hpricot::Text)
           nodes << Structure::TextNode.new(clean_text(portion.to_html))
         else
-          if !(img = (portion/"img[@alt='illustratie']").first).nil?
-            url = img.attributes['src']
-            caption = if para.children[i + 2] &&
-                          para.children[i + 2].stag.name == 'small'
-                        text = para.children[i + 2].inner_html
-                        para.children[i + 2] = nil
-                        clean_text text
+          if !(img = (portion/"img[@alt='illustratie']").first).nil? ||
+              portion.stag.name == 'img'
+            img ||= portion
+            file = img.attributes['src']
+            possibility = para.children[i + 3]
+            caption = if possibility && !possibility.is_a?(Hpricot::Text) &&
+                          para.children[i + 3].stag.name == 'small'
+                        processed << para.children[i + 3]
+                        define_emphasis para.children[i + 3]
+                      elsif possibility.is_a?(Hpricot::Text)
+                        clean_text possibility.to_html.strip
                       else
                         nil
                       end
-            nodes << Structure::Image.new(url, caption)
-          elsif portion.stag.name == 'img'
-            puts "IMAGE! #{portion.inspect}"
+            puts "Creating img: #{file}, #{caption}"
+            nodes << Structure::ImageNode.new(file, caption)
           else
             nodes << define_emphasis(portion)
           end
